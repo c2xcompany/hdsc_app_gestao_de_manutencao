@@ -10,6 +10,7 @@ import { EquipmentRow } from "./equipment-row";
 export const dynamic = "force-dynamic";
 
 type EquipRow = Equipment & { maintenance_records: { count: number }[] };
+type CatOpt = { id: string; name: string; is_active: boolean };
 
 export default async function ClientDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,11 +29,18 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
 
   const { data: equipData } = await supa
     .from("equipment")
-    .select("id, client_id, serial_number, label, brand, model, created_at, maintenance_records(count)")
+    .select("id, client_id, serial_number, label, brand, model, category_id, created_at, maintenance_records(count)")
     .eq("client_id", id)
     .order("created_at", { ascending: false });
 
   const equipment = (equipData ?? []) as unknown as EquipRow[];
+
+  const { data: catData } = await supa
+    .from("categories")
+    .select("id, name, is_active")
+    .order("name", { ascending: true });
+  const categories = (catData ?? []) as CatOpt[];
+  const catName = new Map(categories.map((c) => [c.id, c.name]));
 
   return (
     <div>
@@ -52,7 +60,7 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
             <ClientEdit client={{ id: c.id, name: c.name, cnpj: c.cnpj, active: c.is_active }} />
           ) : null}
         </div>
-        {isSuper ? <NewEquipmentForm clientId={c.id} /> : null}
+        {isSuper ? <NewEquipmentForm clientId={c.id} categories={categories} /> : null}
       </div>
 
       <h2 className="text-sm font-medium text-[color:var(--color-steel)] mb-3">
@@ -69,6 +77,7 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
             <EquipmentRow
               key={e.id}
               canEdit={isSuper}
+              categories={categories}
               equip={{
                 id: e.id,
                 client_id: e.client_id,
@@ -76,6 +85,8 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
                 label: e.label,
                 brand: e.brand,
                 model: e.model,
+                category_id: e.category_id,
+                category_name: e.category_id ? catName.get(e.category_id) ?? null : null,
                 count: e.maintenance_records?.[0]?.count ?? 0,
               }}
             />

@@ -13,6 +13,15 @@ export type Equipment = {
   label: string | null;
   brand: string | null;
   model: string | null;
+  category_id: string | null;
+  created_at: string;
+};
+
+export type Category = {
+  id: string;
+  name: string;
+  monthly_price_cents: number;
+  is_active: boolean;
   created_at: string;
 };
 

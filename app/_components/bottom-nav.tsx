@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconHome, IconClients, IconTeam, IconEquip, IconLogout } from "./icons";
+import { IconHome, IconClients, IconTeam, IconEquip, IconLogout, IconTag } from "./icons";
 
 export function AdminBottomNav({
   isSuper,
@@ -18,6 +18,7 @@ export function AdminBottomNav({
     path.startsWith("/admin/equipamentos") ||
     path.startsWith("/etiqueta");
   const teamActive = path.startsWith("/admin/tecnicos");
+  const catActive = path.startsWith("/admin/categorias");
 
   return (
     <nav className="bottom-nav">
@@ -32,6 +33,12 @@ export function AdminBottomNav({
           <IconClients />
           <span>Clientes</span>
         </Link>
+        {isSuper ? (
+          <Link href="/admin/categorias" className={`bottom-nav-item ${catActive ? "active" : ""}`}>
+            <IconTag />
+            <span>Categorias</span>
+          </Link>
+        ) : null}
         {isSuper ? (
           <Link href="/admin/tecnicos" className={`bottom-nav-item ${teamActive ? "active" : ""}`}>
             <IconTeam />

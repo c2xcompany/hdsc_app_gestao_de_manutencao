@@ -23,8 +23,16 @@ type EquipRow = {
   serial_number: string;
   brand: string | null;
   model: string | null;
+  category_id: string | null;
   created_at: string;
 };
+
+// Meses do início até hoje, contando as duas pontas (mês iniciado conta cheio).
+function monthsInclusive(startISO: string, now: Date): number {
+  const [sy, sm] = startISO.slice(0, 7).split("-").map(Number);
+  const n = (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm) + 1;
+  return Math.max(1, n);
+}
 type Rec = {
   equipment_id: string;
   type: MaintType;
@@ -44,11 +52,21 @@ export default async function ClienteHome({
 
   const { data: equipData } = await supa
     .from("equipment")
-    .select("id, label, serial_number, brand, model, created_at")
+    .select("id, label, serial_number, brand, model, category_id, created_at")
     .eq("client_id", session.clientId)
     .order("created_at", { ascending: false });
   const equipment = (equipData ?? []) as EquipRow[];
   const equipIds = equipment.map((e) => e.id);
+
+  const { data: catData } = await supa
+    .from("categories")
+    .select("id, name, monthly_price_cents");
+  const catPrice = new Map(
+    ((catData ?? []) as { id: string; monthly_price_cents: number }[]).map((c) => [
+      c.id,
+      c.monthly_price_cents,
+    ]),
+  );
 
   let records: Rec[] = [];
   if (equipIds.length) {
@@ -89,6 +107,43 @@ export default async function ClienteHome({
       .reduce((s, r) => s + (r.value_cents ?? 0), 0);
     return { ...e, last, spent };
   });
+
+  // Comparativo "Ter × Alugar": custo acumulado de aluguel do início (1ª manutenção) até hoje.
+  type RentalItem = {
+    id: string;
+    label: string | null;
+    serial: string;
+    months: number;
+    monthly: number;
+    rental: number;
+    since: string;
+  };
+  const rentalItems = equipment
+    .map((e): RentalItem | null => {
+      const monthly = e.category_id ? catPrice.get(e.category_id) ?? 0 : 0;
+      const recs = records.filter((r) => r.equipment_id === e.id);
+      if (monthly <= 0 || recs.length === 0) return null;
+      const since = recs.reduce<string>(
+        (min, r) => (min && min <= r.performed_at ? min : r.performed_at),
+        recs[0].performed_at,
+      );
+      const months = monthsInclusive(since, now);
+      return {
+        id: e.id,
+        label: e.label,
+        serial: e.serial_number,
+        months,
+        monthly,
+        rental: months * monthly,
+        since,
+      };
+    })
+    .filter((x): x is RentalItem => x !== null);
+
+  const rentalTotal = rentalItems.reduce((s, r) => s + r.rental, 0);
+  const investedAllTime = records.reduce((s, r) => s + (r.value_cents ?? 0), 0);
+  const savings = rentalTotal - investedAllTime;
+  const savingsPct = rentalTotal > 0 ? Math.round((savings / rentalTotal) * 100) : 0;
 
   if (equipment.length === 0) {
     return (
@@ -149,6 +204,71 @@ export default async function ClienteHome({
           <div className="k-foot">no período</div>
         </div>
       </div>
+
+      {/* Ter × Alugar */}
+      {rentalItems.length > 0 ? (
+        <div className="card p-5 mt-4" style={{ borderColor: "var(--color-ok)" }}>
+          <div className="flex items-baseline justify-between mb-1">
+            <h2 className="font-display text-lg tracking-wide">Ter × Alugar</h2>
+            <span className="text-xs text-[color:var(--color-faint)]">desde o início · acumulado</span>
+          </div>
+          <p className="text-sm text-[color:var(--color-muted)] mb-4">
+            Quanto sua frota própria já economizou frente ao aluguel equivalente no período.
+          </p>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <div className="text-[11px] text-[color:var(--color-faint)] uppercase tracking-wide">Alugar custaria</div>
+              <div className="text-xl font-semibold tabular-nums">{brl0(rentalTotal)}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[color:var(--color-faint)] uppercase tracking-wide">Você investiu</div>
+              <div className="text-xl font-semibold tabular-nums">{brl0(investedAllTime)}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[color:var(--color-faint)] uppercase tracking-wide">Economia</div>
+              <div
+                className="text-xl font-semibold tabular-nums"
+                style={{ color: savings >= 0 ? "var(--color-ok)" : "var(--color-warn)" }}
+              >
+                {brl0(savings)}
+              </div>
+            </div>
+          </div>
+
+          {savings > 0 ? (
+            <p className="text-sm text-[color:var(--color-steel)] mt-4">
+              Ter a frota própria já representou <b>{brl0(savings)}</b>
+              {savingsPct > 0 ? <> ({savingsPct}%)</> : null} a menos do que custaria alugar equipamentos equivalentes.
+            </p>
+          ) : null}
+
+          <details className="mt-4">
+            <summary className="text-xs text-[color:var(--color-blue-strong)] cursor-pointer select-none">
+              Ver por equipamento
+            </summary>
+            <div className="mt-2">
+              {rentalItems.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 py-2.5 border-t border-[color:var(--color-line)] first:border-t-0"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="font-medium text-sm">{r.label || "Equipamento"}</span>
+                      <span className="font-mono text-[11px] text-[color:var(--color-blue-strong)]">{r.serial}</span>
+                    </div>
+                    <div className="text-[11px] text-[color:var(--color-muted)] mt-0.5">
+                      desde {formatDateBR(r.since)} · {r.months} {r.months === 1 ? "mês" : "meses"} × {brl0(r.monthly)}/mês
+                    </div>
+                  </div>
+                  <div className="text-sm font-semibold tabular-nums shrink-0">{brl0(r.rental)}</div>
+                </div>
+              ))}
+            </div>
+          </details>
+        </div>
+      ) : null}
 
       {/* Investimento por mês */}
       <div className="card p-5 mt-4">

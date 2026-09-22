@@ -7,6 +7,8 @@ import { Modal } from "@/app/_components/modal";
 import { IconEdit } from "@/app/_components/icons";
 import { updateEquipmentAction, deleteEquipmentAction, type ActionState } from "../../../actions";
 
+type CatOpt = { id: string; name: string; is_active: boolean };
+
 type Equip = {
   id: string;
   client_id: string;
@@ -14,10 +16,20 @@ type Equip = {
   label: string | null;
   brand: string | null;
   model: string | null;
+  category_id: string | null;
+  category_name: string | null;
   count: number;
 };
 
-export function EquipmentRow({ equip, canEdit }: { equip: Equip; canEdit: boolean }) {
+export function EquipmentRow({
+  equip,
+  canEdit,
+  categories,
+}: {
+  equip: Equip;
+  canEdit: boolean;
+  categories: CatOpt[];
+}) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [upState, upAction, upPending] = useActionState<ActionState, FormData>(
@@ -56,6 +68,9 @@ export function EquipmentRow({ equip, canEdit }: { equip: Equip; canEdit: boolea
           {[equip.brand, equip.model].filter(Boolean).join(" · ") || "sem marca/modelo"} ·{" "}
           {equip.count} {equip.count === 1 ? "registro" : "registros"}
         </div>
+        {equip.category_name ? (
+          <div className="text-[11px] text-[color:var(--color-steel)] mt-0.5">{equip.category_name}</div>
+        ) : null}
       </Link>
       {canEdit ? (
         <button className="icon-btn shrink-0" onClick={() => setOpen(true)} aria-label="Editar equipamento">
@@ -76,6 +91,20 @@ export function EquipmentRow({ equip, canEdit }: { equip: Equip; canEdit: boolea
           <div>
             <label className="label" htmlFor={`l-${equip.id}`}>Identificação</label>
             <input id={`l-${equip.id}`} name="label" className="field" defaultValue={equip.label ?? ""} placeholder="Ex.: Empilhadeira 1" />
+          </div>
+          <div>
+            <label className="label" htmlFor={`c-${equip.id}`}>Categoria</label>
+            <select id={`c-${equip.id}`} name="category_id" className="field" defaultValue={equip.category_id ?? ""}>
+              <option value="">Sem categoria</option>
+              {categories
+                .filter((c) => c.is_active || c.id === equip.category_id)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                    {!c.is_active ? " (inativa)" : ""}
+                  </option>
+                ))}
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

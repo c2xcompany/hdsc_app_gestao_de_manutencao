@@ -66,6 +66,7 @@ export async function createEquipmentAction(
   const label = String(formData.get("label") || "").trim();
   const brand = String(formData.get("brand") || "").trim();
   const model = String(formData.get("model") || "").trim();
+  const category_id = String(formData.get("category_id") || "").trim();
 
   if (!client_id) return { error: "Cliente inválido." };
   if (serial_number.length < 2) return { error: "Informe o número de série." };
@@ -84,6 +85,7 @@ export async function createEquipmentAction(
     label: label || null,
     brand: brand || null,
     model: model || null,
+    category_id: category_id || null,
   });
   if (error) return { error: "Erro ao salvar: " + error.message };
 
@@ -450,6 +452,7 @@ export async function updateEquipmentAction(
   const label = String(formData.get("label") || "").trim();
   const brand = String(formData.get("brand") || "").trim();
   const model = String(formData.get("model") || "").trim();
+  const category_id = String(formData.get("category_id") || "").trim();
 
   if (!id) return { error: "Registro inválido." };
   if (serial_number.length < 2) return { error: "Informe o número de série." };
@@ -470,6 +473,7 @@ export async function updateEquipmentAction(
       label: label || null,
       brand: brand || null,
       model: model || null,
+      category_id: category_id || null,
     })
     .eq("id", id);
   if (error) return { error: "Erro ao salvar: " + error.message };
@@ -518,6 +522,110 @@ export async function setClientActiveAction(
   await logAudit(active ? "ativou" : "desativou", "cliente");
   revalidatePath(`/admin/clientes/${id}`);
   revalidatePath("/admin/clientes");
+  return { ok: true };
+}
+
+export async function createCategoryAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await requireSuper();
+  if (!session) return NOT_SUPER;
+
+  const name = String(formData.get("name") || "").trim();
+  const price_cents = parseBRLtoCents(String(formData.get("monthly_price") || "")) ?? 0;
+
+  if (name.length < 2) return { error: "Informe o nome da categoria." };
+
+  const supa = supabaseAdmin();
+  const { data: existing } = await supa
+    .from("categories")
+    .select("id")
+    .ilike("name", name)
+    .maybeSingle();
+  if (existing) return { error: "Já existe uma categoria com esse nome." };
+
+  const { error } = await supa
+    .from("categories")
+    .insert({ name, monthly_price_cents: price_cents });
+  if (error) return { error: "Erro ao salvar: " + error.message };
+
+  await logAudit("cadastrou", "categoria", name);
+  revalidatePath("/admin/categorias");
+  return { ok: true };
+}
+
+export async function updateCategoryAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await requireSuper();
+  if (!session) return NOT_SUPER;
+
+  const id = String(formData.get("id") || "").trim();
+  const name = String(formData.get("name") || "").trim();
+  const price_cents = parseBRLtoCents(String(formData.get("monthly_price") || "")) ?? 0;
+
+  if (!id) return { error: "Registro inválido." };
+  if (name.length < 2) return { error: "Informe o nome da categoria." };
+
+  const supa = supabaseAdmin();
+  const { data: clash } = await supa
+    .from("categories")
+    .select("id")
+    .ilike("name", name)
+    .neq("id", id)
+    .maybeSingle();
+  if (clash) return { error: "Já existe outra categoria com esse nome." };
+
+  const { error } = await supa
+    .from("categories")
+    .update({ name, monthly_price_cents: price_cents })
+    .eq("id", id);
+  if (error) return { error: "Erro ao salvar: " + error.message };
+
+  await logAudit("editou", "categoria", name);
+  revalidatePath("/admin/categorias");
+  return { ok: true };
+}
+
+export async function setCategoryActiveAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await requireSuper();
+  if (!session) return NOT_SUPER;
+
+  const id = String(formData.get("id") || "").trim();
+  const active = formData.get("active") === "1";
+  if (!id) return { error: "Registro inválido." };
+
+  const supa = supabaseAdmin();
+  const { error } = await supa.from("categories").update({ is_active: active }).eq("id", id);
+  if (error) return { error: "Erro: " + error.message };
+
+  await logAudit(active ? "ativou" : "desativou", "categoria");
+  revalidatePath("/admin/categorias");
+  return { ok: true };
+}
+
+export async function deleteCategoryAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await requireSuper();
+  if (!session) return NOT_SUPER;
+
+  const id = String(formData.get("id") || "").trim();
+  if (!id) return { error: "Registro inválido." };
+
+  const supa = supabaseAdmin();
+  // Equipamentos que usam a categoria ficam sem categoria (category_id = null via FK on delete set null).
+  const { error } = await supa.from("categories").delete().eq("id", id);
+  if (error) return { error: "Erro ao remover: " + error.message };
+
+  await logAudit("removeu", "categoria");
+  revalidatePath("/admin/categorias");
   return { ok: true };
 }
 
