@@ -59,6 +59,13 @@ export function formatBRL(cents: number | null | undefined): string {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+// Meses do início até "now", contando as duas pontas (mês iniciado conta cheio).
+export function monthsInclusive(startISO: string, now: Date): number {
+  const [sy, sm] = startISO.slice(0, 7).split("-").map(Number);
+  const n = (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm) + 1;
+  return Math.max(1, n);
+}
+
 export function formatDateBR(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = iso.slice(0, 10).split("-");

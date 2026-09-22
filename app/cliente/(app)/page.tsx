@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
-import { formatDateBR, type MaintType } from "@/lib/types";
+import { formatDateBR, monthsInclusive, type MaintType } from "@/lib/types";
 import { resolvePeriod } from "@/lib/period";
 import { PeriodPicker } from "@/app/_components/period-picker";
 
@@ -26,13 +26,6 @@ type EquipRow = {
   category_id: string | null;
   created_at: string;
 };
-
-// Meses do início até hoje, contando as duas pontas (mês iniciado conta cheio).
-function monthsInclusive(startISO: string, now: Date): number {
-  const [sy, sm] = startISO.slice(0, 7).split("-").map(Number);
-  const n = (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm) + 1;
-  return Math.max(1, n);
-}
 type Rec = {
   equipment_id: string;
   type: MaintType;

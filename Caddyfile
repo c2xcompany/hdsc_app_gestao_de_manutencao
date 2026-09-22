@@ -1,0 +1,10 @@
+# Com domínio (DOMAIN definido no .env): HTTPS automático via Let's Encrypt.
+# Sem domínio: acesse por http://IP (Caddy responde na porta 80).
+{$DOMAIN::80} {
+	reverse_proxy web:3000
+	encode gzip zstd
+	# Uploads de laudo em PDF podem passar de 10MB (limite do serverAction é 20MB).
+	request_body {
+		max_size 25MB
+	}
+}
