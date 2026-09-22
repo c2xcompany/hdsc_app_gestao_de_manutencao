@@ -52,27 +52,6 @@ export default async function ClienteEquip({ params }: { params: Promise<{ id: s
   const rentalCost = rentMonths * monthlyPrice;
   const savings = rentalCost - total;
 
-  // Análise mensal deste equipamento: investimento por mês (da 1ª manutenção até hoje, últimos 12).
-  const chartNow = new Date();
-  const monthsBack = since ? Math.min(12, Math.max(1, monthsInclusive(since, chartNow))) : 0;
-  const monthly = Array.from({ length: monthsBack }, (_, idx) => {
-    const i = monthsBack - 1 - idx;
-    const d = new Date(chartNow.getFullYear(), chartNow.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
-    const cents = records
-      .filter((r) => r.performed_at.slice(0, 7) === key)
-      .reduce((s, r) => s + (r.value_cents ?? 0), 0);
-    return { key, label, cents };
-  });
-  const maxMonthly = Math.max(1, ...monthly.map((m) => m.cents));
-  const compact = (cents: number) => {
-    const reais = cents / 100;
-    if (reais <= 0) return "";
-    if (reais >= 1000) return (reais / 1000).toFixed(1).replace(".", ",") + "k";
-    return String(Math.round(reais));
-  };
-
   return (
     <div>
       <Link href="/cliente" className="text-sm text-[color:var(--color-muted)] hover:text-white no-print">
@@ -119,27 +98,6 @@ export default async function ClienteEquip({ params }: { params: Promise<{ id: s
           </div>
         ) : null}
       </div>
-
-      {monthly.length > 0 ? (
-        <div className="card p-5 mb-6 no-print">
-          <div className="flex items-baseline justify-between mb-1">
-            <h2 className="font-display text-lg tracking-wide">Investimento por mês</h2>
-            <span className="text-xs text-[color:var(--color-faint)]">R$ · últimos {monthly.length} meses</span>
-          </div>
-          <div className="chart">
-            {monthly.map((m, i) => (
-              <div key={m.key + i} className="bar-col" title={`${m.label} · R$ ${compact(m.cents) || 0}`}>
-                <span className="bar-val">{compact(m.cents)}</span>
-                <div
-                  className="bar"
-                  style={{ height: `${m.cents > 0 ? Math.max(4, (m.cents / maxMonthly) * 100) : 2}%` }}
-                />
-                <span className="bar-m">{m.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       <h2 className="text-sm font-medium text-[color:var(--color-steel)] mb-3">
         Histórico de manutenções
