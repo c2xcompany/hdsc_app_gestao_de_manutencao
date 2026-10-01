@@ -11,7 +11,8 @@ export function LoginForm() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="font-display text-5xl tracking-wide">
-            HIDRO<span style={{ color: "var(--color-blue-strong)" }}>SUCE</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Hidro Suce" className="h-16 w-auto" />
           </div>
           <p className="text-sm text-[color:var(--color-muted)] mt-1">
             Histórico de manutenção das empilhadeiras

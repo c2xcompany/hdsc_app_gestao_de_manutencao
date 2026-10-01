@@ -21,7 +21,8 @@ export function UnlockForm({
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <div className="font-display text-3xl tracking-wide">
-            HIDRO<span style={{ color: "var(--color-blue-strong)" }}>SUCE</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Hidro Suce" className="h-10 w-auto" />
           </div>
           <p className="text-xs text-[color:var(--color-faint)] mt-1">Manutenção de empilhadeiras</p>
         </div>

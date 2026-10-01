@@ -24,7 +24,8 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
       <header className="border-b border-[color:var(--color-line)] sticky top-0 z-10 bg-[color:var(--color-navy)]/90 backdrop-blur">
         <div className="mx-auto max-w-xl px-5 h-14 flex items-center justify-between gap-4">
           <Link href="/admin" className="font-display text-2xl tracking-wide">
-            HIDRO<span style={{ color: "var(--color-blue-strong)" }}>SUCE</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Hidro Suce" className="h-8 w-auto" />
           </Link>
           <span className="text-xs text-[color:var(--color-faint)] truncate">
             {session.name} · {isSuper ? "super admin" : "técnico"}
