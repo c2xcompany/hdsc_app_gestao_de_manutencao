@@ -22,7 +22,7 @@ export function UnlockForm({
         <div className="text-center mb-6">
           <div className="font-display text-3xl tracking-wide">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Hidro Suce" className="h-10 w-auto" />
+            <img src="/logo.png" alt="Hidro Suce" className="block mx-auto h-16 w-auto" />
           </div>
           <p className="text-xs text-[color:var(--color-faint)] mt-1">Manutenção de empilhadeiras</p>
         </div>

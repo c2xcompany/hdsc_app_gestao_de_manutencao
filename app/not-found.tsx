@@ -5,7 +5,7 @@ export default function NotFound() {
     <div className="min-h-dvh flex flex-col items-center justify-center px-5 text-center">
       <div className="font-display text-5xl tracking-wide">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Hidro Suce" className="h-14 w-auto" />
+            <img src="/logo.png" alt="Hidro Suce" className="block mx-auto h-20 w-auto" />
       </div>
       <div className="mt-8 text-4xl">🔒</div>
       <h1 className="mt-3 font-display text-2xl tracking-wide">Conteúdo indisponível</h1>
