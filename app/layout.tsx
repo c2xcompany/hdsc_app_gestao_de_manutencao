@@ -18,9 +18,19 @@ const plex = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://app.hidrosuce.com.br"),
   title: "Hidro Suce · Manutenção",
   description:
     "Histórico de manutenção das empilhadeiras — consulte pelo QR code ou pelo painel.",
+  openGraph: {
+    title: "Hidro Suce · Sistema de manutenção",
+    description:
+      "Sistema de Gestão de Manutenção — histórico das empilhadeiras.",
+    url: "https://app.hidrosuce.com.br",
+    siteName: "Hidro Suce",
+    locale: "pt_BR",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {
